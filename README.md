@@ -35,10 +35,10 @@ Após o upload, o sistema estará pronto para realizar as medições de **temper
 ## 📦 Materiais utilizados
 
 1. **Placa Arduino Uno**
-2. **Breadboard (placa de ensaio)**
+2. **Protoboard**
 3. **Display LCD 16x2 com módulo I2C**
 4. **Sensor de temperatura e umidade DHT22**
-5. **Buzzer piezoelétrico**
+5. **Buzzer**
 6. **3 botões de pressão (Push Buttons)**
 7. **3 LEDs** – verde, amarelo e vermelho
 8. **3 resistores**
