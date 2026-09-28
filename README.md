@@ -18,12 +18,12 @@ O sistema realiza a medição da **temperatura** e da **umidade do ambiente**, p
 
 O código utilizado no projeto está disponível no arquivo:
 
-`vinho-no-display`
+`vinho-no-display-code.cpp`
 
 Para utilizar o código, basta:
 
 1. Abrir a **Arduino IDE**.
-2. Abrir o arquivo `vinho-no-display`.
+2. Abrir o arquivo `vinho-no-display-code.cpp`.
 3. Copiar o código.
 4. Colar o código na Arduino IDE.
 5. Selecionar a placa Arduino utilizada.
