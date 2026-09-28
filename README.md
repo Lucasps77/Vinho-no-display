@@ -2,10 +2,11 @@
 
 ## 👥 Integrantes do grupo
 
-* Nome do integrante 1
-* Nome do integrante 2
-* Nome do integrante 3
-* Nome do integrante 4
+CAUÃ VECHINI LIMA – RA: 082250039
+JULIANA MEDEIROS SILVA – RA: 082240040
+LÍVIA PEREIRA QUEIROZ – RA: 082240013
+LUCAS PIOVEZAN DOS SANTOS - RA: 082250040
+RAFAEL AKIO BUOSO WATANABLE – RA: 082240007
 
 ## 📌 Sobre o projeto
 
