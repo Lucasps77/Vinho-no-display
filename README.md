@@ -51,7 +51,7 @@ Após o upload, o sistema estará pronto para realizar as medições de **temper
 
 * Arduino
 * Arduino IDE
-* C/C++
+* C++
 
 ## 🎯 Objetivo
 
