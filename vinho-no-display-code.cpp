@@ -9,7 +9,7 @@
 // ======================================================
 
 #define SERIAL_OPTION 1
-#define VERSAO_PROJETO "v9"
+#define VERSAO_PROJETO "v10"
 
 // ======================================================
 // PINOS
@@ -20,7 +20,7 @@
 
 // Sensor físico: DHT11
 // Sensor do simulador: DHT22
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
 
 // Botões
 #define BOTAO_ANTERIOR 8
@@ -37,6 +37,10 @@
 
 // Sensores analógicos
 #define LDR_PIN A0
+
+// O divisor do LDR deste projeto apresenta leitura invertida:
+// quanto maior a leitura do A0, menor a luminosidade.
+const bool LDR_INVERTIDO = true;
 #define POT_PIN A1
 
 // ======================================================
@@ -711,6 +715,11 @@ void setup() {
 
   descobrirProximoEndereco();
 
+  // O LDR começa sempre em 0%.
+  // Se o sensor não estiver conectado, a rotina lerSensores()
+  // também mantém esse valor em 0%.
+  lightPercent = 0;
+
   // Primeira leitura imediata para evitar que NAN seja
   // interpretado como uma falha antes dos 3 segundos.
   lastDHTRead = millis() - DHT_INTERVAL;
@@ -839,13 +848,41 @@ void carregarConfiguracao() {
 // ======================================================
 
 void carregarCalibracaoLDR() {
-  EEPROM.get(EEPROM_CALIBRATION_ADDRESS, calibracaoLDR);
-  if (calibracaoLDR.magic != CALIBRACAO_MAGIC ||
-      calibracaoLDR.escuro >= calibracaoLDR.claro) {
+
+  EEPROM.get(
+    EEPROM_CALIBRATION_ADDRESS,
+    calibracaoLDR
+  );
+
+  bool calibracaoValida = false;
+
+  if (calibracaoLDR.magic == CALIBRACAO_MAGIC) {
+
+    if (LDR_INVERTIDO) {
+      calibracaoValida =
+        calibracaoLDR.escuro > calibracaoLDR.claro;
+    } else {
+      calibracaoValida =
+        calibracaoLDR.escuro < calibracaoLDR.claro;
+    }
+  }
+
+  if (!calibracaoValida) {
+
     calibracaoLDR.magic = CALIBRACAO_MAGIC;
-    calibracaoLDR.escuro = 0;
-    calibracaoLDR.claro = 1023;
-    EEPROM.put(EEPROM_CALIBRATION_ADDRESS, calibracaoLDR);
+
+    if (LDR_INVERTIDO) {
+      calibracaoLDR.escuro = 1023;
+      calibracaoLDR.claro = 0;
+    } else {
+      calibracaoLDR.escuro = 0;
+      calibracaoLDR.claro = 1023;
+    }
+
+    EEPROM.put(
+      EEPROM_CALIBRATION_ADDRESS,
+      calibracaoLDR
+    );
   }
 }
 
@@ -1043,31 +1080,115 @@ void lerSensores() {
     analogRead(LDR_PIN);
 
 
-  // Converte o valor bruto usando as referencias da calibracao.
-  // Escuro = 0% e claro = 100%.
-  if (calibracaoLDR.claro > calibracaoLDR.escuro) {
-    lightPercent = map(
-      rawLDR,
-      calibracaoLDR.escuro,
-      calibracaoLDR.claro,
-      0,
-      100
-    );
+  // ----------------------------------------------------
+  // TRATAMENTO DO LDR INVERTIDO
+  // ----------------------------------------------------
+  // Neste circuito:
+  //
+  //   A0 alto  -> pouca/nenhuma luz -> 0%
+  //   A0 baixo -> muita luz         -> 100%
+  //
+  // A calibracao tambem usa essa orientacao.
+  // ----------------------------------------------------
+
+  const int LDR_ALTO_SEM_LUZ = 1018;
+
+  if (LDR_INVERTIDO) {
+
+    if (rawLDR >= LDR_ALTO_SEM_LUZ) {
+
+      lightPercent = 0;
+
+    } else if (
+      calibracaoLDR.escuro != calibracaoLDR.claro
+    ) {
+
+      lightPercent =
+        map(
+          rawLDR,
+          calibracaoLDR.escuro,
+          calibracaoLDR.claro,
+          0,
+          100
+        );
+
+      lightPercent =
+        constrain(
+          lightPercent,
+          0,
+          100
+        );
+
+    } else {
+
+      lightPercent =
+        map(
+          rawLDR,
+          1023,
+          0,
+          0,
+          100
+        );
+
+      lightPercent =
+        constrain(
+          lightPercent,
+          0,
+          100
+        );
+    }
+
   } else {
-    lightPercent = map(rawLDR, 0, 1023, 0, 100);
+
+    if (rawLDR <= 5) {
+
+      lightPercent = 0;
+
+    } else if (
+      calibracaoLDR.escuro != calibracaoLDR.claro
+    ) {
+
+      lightPercent =
+        map(
+          rawLDR,
+          calibracaoLDR.escuro,
+          calibracaoLDR.claro,
+          0,
+          100
+        );
+
+      lightPercent =
+        constrain(
+          lightPercent,
+          0,
+          100
+        );
+
+    } else {
+
+      lightPercent =
+        map(
+          rawLDR,
+          0,
+          1023,
+          0,
+          100
+        );
+
+      lightPercent =
+        constrain(
+          lightPercent,
+          0,
+          100
+        );
+    }
   }
 
 
-  lightPercent =
-    constrain(
-      lightPercent,
-      0,
-      100
-    );
-}
-
-
 // ======================================================
+} 
+
+
 // VERIFICA SE ESTÁ FORA DOS LIMITES
 // ======================================================
 
@@ -2877,10 +2998,18 @@ void iniciarCalibracaoLDR() {
 
   lcd.clear();
 
-  // A rotina solicitada considera luz acesa como 1023 e
-  // luz apagada como 0. Portanto, a referencia clara precisa
-  // ser maior que a referencia escura.
-  if (novoClaro <= novoEscuro) {
+  // Aceita a ordem correta para o tipo de circuito selecionado.
+  // No circuito invertido, claro deve gerar leitura menor
+  // que escuro.
+  bool calibracaoValida;
+
+  if (LDR_INVERTIDO) {
+    calibracaoValida = novoEscuro > novoClaro;
+  } else {
+    calibracaoValida = novoClaro > novoEscuro;
+  }
+
+  if (!calibracaoValida) {
     lcd.setCursor(0, 0);
     if (config.idioma == EN_US) lcd.print(F("CALIBRATION ERR"));
     else if (config.idioma == ES_ES) lcd.print(F("CALIBRACION ERR"));
@@ -3307,3 +3436,7 @@ void get_log() {
 
   Serial.println(F("=========================================="));
 }
+O código final. (Data logger - Vinho no display)
+JULIANA MEDEIROS SILVA
+
+LIVIA PEREIRA QUEIROZ;
