@@ -61,5 +61,6 @@ Desenvolver uma solução simples para monitorar as condições ambientais de ar
 
 <p align="center">
   <img src="imagens/vinho_no_display.png" width="500">
+  <img src="imagens/vinho_no_display_2.jpeg" width="500">
 </p>
 
