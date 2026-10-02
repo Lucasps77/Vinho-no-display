@@ -57,7 +57,7 @@ Após o upload, o sistema estará pronto para realizar as medições de **temper
 
 Desenvolver uma solução simples para monitorar as condições ambientais de armazenamento de vinhos, utilizando sensores e um microcontrolador para realizar a coleta das informações.
 
-## 📷 Imagem do projeto
+## 📷 Imagens do projeto
 
 <p align="center">
   <img src="imagens/vinho_no_display.png" width="500">
